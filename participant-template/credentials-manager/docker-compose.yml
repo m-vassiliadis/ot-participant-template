@@ -3,7 +3,7 @@ services:
     image: docker.io/razzabi/datacellar-cli:v0.4.44
     container_name: ${PARTICIPANT_NAME}.credentials-api
     restart: unless-stopped
-    command: datacellar serve-api --port 8080
+    command: opentunity serve-api --port 8080
     volumes:
       - ${CREDENTIALS_FOLDER}:/credentials
       - ${CERT_FOLDER}:/certs
@@ -12,7 +12,7 @@ services:
     #   - 8080:8080
     environment:
       CREDENTIALS_MANAGER_API: "http://credentials-api:8080/api/v1"
-      DATACELLAR_API_BASE_URL: ${DATACELLAR_API_BASE_URL}
+      DATACELLAR_API_BASE_URL: ${OPENTUNITY_API_BASE_URL}
       WALLET_API_BASE_URL: ${WALLET_API_BASE_URL}
       WALLET_USER_NAME: ${WALLET_USER_NAME}
       WALLET_USER_EMAIL: ${WALLET_USER_EMAIL}
@@ -33,9 +33,9 @@ services:
 
       EDC_RABBIT_URL: amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${PARTICIPANT_NAME}.connector-broker:5672
     networks:
-      - datacellar
+      - opentunity
 
 networks:
-  datacellar:
+  opentunity:
     external: true
-    name: datacellar_network
+    name: opentunity_network

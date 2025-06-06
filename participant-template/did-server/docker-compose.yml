@@ -10,9 +10,9 @@ services:
     # ports:
     #   - "80:80"
     networks:
-      - datacellar
+      - opentunity
 
 networks:
-  datacellar:
+  opentunity:
     external: true
-    name: datacellar_network
+    name: opentunity_network

@@ -1,7 +1,7 @@
 version: "3"
 
 vars:
-  EXAMPLES_IMAGE: datacellar-connector-examples
+  EXAMPLES_IMAGE: opentunity-connector-examples
   LOCAL_PROTOCOL_URL: "https://{{.PARTICIPANT_NAME}}.{{.DOMAIN_NAME}}/protocol"
   EDC_CONNECTOR_SCHEME: "http"
   EDC_CONNECTOR_HOST: "{{.PARTICIPANT_NAME}}.{{.DOMAIN_NAME}}"
@@ -95,7 +95,7 @@ tasks:
     vars:
       # We need to run inside the connector's Docker network to connect to the broker
       # We should fix this eventually so consumer applications can run on the host
-      NETWORK_NAME: datacellar_network
+      NETWORK_NAME: opentunity_network
       EDC_RABBIT_URL: amqp://{{.RABBITMQ_DEFAULT_USER}}:{{.RABBITMQ_DEFAULT_PASS}}@{{.PARTICIPANT_NAME}}.connector-broker:5672
     requires:
       vars:

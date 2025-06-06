@@ -76,9 +76,8 @@ declare -A DEFAULTS=(
     ["PARTICIPANT_ROOT_FOLDER"]="$USER_WORKING_DIR/participants"
     ["PROXY_FOLDER"]="$USER_WORKING_DIR/reverse-proxy/caddy"
     ["USE_LETSENCRYPT"]="true"
-    ["DATACELLAR_IDP_URL"]="https://idp.datacellar.cosypoc.ovh"
-    ["ISSUER_DID"]="did:web:idp.datacellar.cosypoc.ovh:wallet-api:registry:35103002-ac6c-474e-a083-f8cc046ea2bd"
-    ["USE_CDE"]="true"
+    ["DATACELLAR_IDP_URL"]="https://idm.opentunity.que-tech.com"
+    ["ISSUER_DID"]="did:web:idm.opentunity.que-tech.com:wallet-api:registry:56281e77-8939-480e-b283-d62a7005fa8c"
 )
 
 # Collect user inputs
@@ -87,23 +86,15 @@ prompt_user "Enter domain name" "" domain_name
 prompt_user "Enter participant root folder" "${DEFAULTS[PARTICIPANT_ROOT_FOLDER]}" participant_root_folder
 prompt_user "Enter proxy folder" "${DEFAULTS[PROXY_FOLDER]}" proxy_folder
 prompt_user "Use Let's Encrypt? (true/false)" "${DEFAULTS[USE_LETSENCRYPT]}" use_letsencrypt
-prompt_user "Set URL of Data Cellar's Identity Provider" "${DEFAULTS[DATACELLAR_IDP_URL]}" datacellar_idp_url
+prompt_user "Set URL of OPENTUNITY's Identity Provider" "${DEFAULTS[DATACELLAR_IDP_URL]}" datacellar_idp_url
 prompt_user "Set URL of the Issuer API" "$datacellar_idp_url" issuer_api_url
 prompt_user "Set DID of the trust anchor (i.e., the central trusted issuer)" "${DEFAULTS[ISSUER_DID]}" issuer_did
 prompt_user "Set API key to access the Issuer API" "${DEFAULTS[ISSUER_API_KEY]}" issuer_api_key
 prompt_user "Set URL of the Verifier API" "$datacellar_idp_url" verifier_api_url
-prompt_user "Do you want to use the CDE? (true/false)" "${DEFAULTS[USE_CDE]}" use_cde
-
-if [ "$use_cde" = "false" ]; then
-    OPENAPI_URL_PROMPT="Enter the URL of the OpenAPI file that defines your connector's API, \
-    or leave it blank if your connector functions strictly as a consumer \
-    (e.g., https://petstore3.swagger.io/api/v3/openapi.json)"
-    prompt_user "$OPENAPI_URL_PROMPT" "" connector_openapi_url "true"
-else
-    INFLUXDB_TOKEN=$(openssl rand -hex 32)
-    INFLUXDB_PASSWORD=$(openssl rand -hex 8)
-    connector_openapi_url="http://cde:5001/openapi.json"
-fi
+OPENAPI_URL_PROMPT="Enter the URL of the OpenAPI file that defines your connector's API, \
+or leave it blank if your connector functions strictly as a consumer \
+(e.g., https://petstore3.swagger.io/api/v3/openapi.json)"
+prompt_user "$OPENAPI_URL_PROMPT" "" connector_openapi_url "true"
 
 # Export environment variables
 declare -A ENV_VARS=(
@@ -118,7 +109,6 @@ declare -A ENV_VARS=(
     ["ISSUER_API_KEY"]="$issuer_api_key"
     ["VERIFIER_API_BASE_URL"]="$verifier_api_url"
     ["CONNECTOR_OPENAPI_URL"]="$connector_openapi_url"
-    ["USE_CDE"]="$use_cde"
 )
 
 for key in "${!ENV_VARS[@]}"; do
@@ -131,11 +121,11 @@ PARTICIPANT_TEMPLATE="$USER_WORKING_DIR/../participant-template/"
 EXTERNAL_PROXY_FOLDER="$PROXY_FOLDER"
 PROXY_CERT_FOLDER="$PROXY_FOLDER/certs"
 
-export PARTICIPANT_FOLDER PARTICIPANT_TEMPLATE EXTERNAL_PROXY_FOLDER PROXY_CERT_FOLDER INFLUXDB_TOKEN INFLUXDB_PASSWORD USE_CDE
+export PARTICIPANT_FOLDER PARTICIPANT_TEMPLATE EXTERNAL_PROXY_FOLDER PROXY_CERT_FOLDER
 
 # Display configuration
 print_separator
-print_bold_green "🚀 Setting up Data Cellar participant"
+print_bold_green "🚀 Setting up OPENTUNITY participant"
 print_separator
 
 declare -A DISPLAY_VARS=(
@@ -144,7 +134,6 @@ declare -A DISPLAY_VARS=(
     ["Domain"]="$DOMAIN_NAME"
     ["Proxy folder"]="$PROXY_FOLDER"
     ["Using Let's Encrypt"]="$USE_LETSENCRYPT"
-    ["Using CDE"]="$USE_CDE"
 )
 
 printf "\n📋 Configuration Summary:\n\n"

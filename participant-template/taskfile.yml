@@ -17,7 +17,6 @@ includes:
   proxy: "reverse-proxy/taskfile.yml"
   credentials-manager: "credentials-manager/taskfile.yml"
   connector: "edc-connector/taskfile.yml"
-  cde: "cde/taskfile.yml"
   webui: "webui/taskfile.yml"
 
 tasks:
@@ -31,8 +30,6 @@ tasks:
       - task: create-legalparticipant
       - task connector:start
       - task webui:start
-      - cmd: sh -c '{{if eq .USE_CDE "true"}} echo "task cde:start" && task cde:start{{end}}'
-      - cmd: sh -c '{{if eq .USE_CDE "true"}} echo "monitor CDE" && task monitor-cde-openapi &{{end}}'
 
   stop-all:
     cmds:
@@ -41,7 +38,6 @@ tasks:
       - task wallet:stop
       - task did-server:stop
       - task webui:stop
-      - task cde:stop
 
   config-all:
     cmds:
@@ -98,32 +94,3 @@ tasks:
           cd $PARTICIPANT_FOLDER && task credentials-manager:create-legalparticipant
         fi
 
-  monitor-cde-openapi:
-    desc: Monitor CDE openapi spec and restart connector if changed
-    silent: true
-    cmds:
-      - |
-        echo "Monitoring OpenAPI spec changes..."
-        echo $$ > /tmp/monitor_openapi.pid  # Save PID
-        prev_hash=""
-        while true; do
-          current_hash=$(curl -s http://localhost:5001/openapi.json | sha256sum | cut -d ' ' -f1)
-          if [ "$prev_hash" != "" ] && [ "$current_hash" != "$prev_hash" ]; then
-            echo "OpenAPI spec changed, restarting connector..."
-            task connector:restart
-          fi
-          prev_hash=$current_hash
-          sleep 10
-        done
-  
-  stop-monitor:
-    desc: Stop OpenAPI monitor task
-    silent: true
-    cmds:
-      - |
-        if [ -f /tmp/monitor_openapi.pid ]; then
-          kill $(cat /tmp/monitor_openapi.pid) && echo "Stopped monitor task."
-          rm /tmp/monitor_openapi.pid
-        else
-          echo "No running monitor task found."
-        fi

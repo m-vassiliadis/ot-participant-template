@@ -17,7 +17,7 @@ services:
       broker:
         condition: service_healthy
     networks:
-      - datacellar
+      - opentunity
 
   backend:
     image: ${EDC_CONNECTOR_IMG}:${EDC_CONNECTOR_IMG_VERSION}
@@ -38,7 +38,7 @@ services:
       broker:
         condition: service_healthy
     networks:
-      - datacellar
+      - opentunity
 
   broker:
     image: rabbitmq:3.11-management
@@ -51,7 +51,7 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
     networks:
-      - datacellar
+      - opentunity
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 30s
@@ -83,6 +83,6 @@ volumes:
   postgres_data: {}
 
 networks:
-  datacellar:
+  opentunity:
     external: true
-    name: datacellar_network
+    name: opentunity_network

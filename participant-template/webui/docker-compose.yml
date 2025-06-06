@@ -9,9 +9,9 @@ services:
       BASE_URL: https://${PARTICIPANT_NAME}.${DOMAIN_NAME}
       API_BASE_URL: "https://${PARTICIPANT_NAME}.${DOMAIN_NAME}/api/v1/"
     networks:
-      - datacellar
+      - opentunity
 
 networks:
-  datacellar:
+  opentunity:
     external: true
-    name: datacellar_network
+    name: opentunity_network

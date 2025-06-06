@@ -14,10 +14,10 @@ vars:
   ACME_CA_STAGING: "https://acme-staging-v02.api.letsencrypt.org/directory"
   ACME_CERTS_DIR_PROD: "acme-v02.api.letsencrypt.org-directory"
   ACME_CERTS_DIR_STAGING: "acme-staging-v02.api.letsencrypt.org-directory"
-  DATACELLAR_NETWORK_NAME: "datacellar_network"
+  DATACELLAR_NETWORK_NAME: "opentunity_network"
   DATACELLAR_NETWORK_SUBNET: "192.168.0.0/24"
   DATACELLAR_NETWORK_GATEWAY: "192.168.0.1"
-  DATACELLAR_NETWORK_BRIDGE_NAME: "br_datacellar"
+  DATACELLAR_NETWORK_BRIDGE_NAME: "br_opentunity"
   CADDY_ACME_CA: "{{not .USE_STAGING | ternary .ACME_CA_PROD .ACME_CA_STAGING}}"
   CADDY_CERTS_DIR: "{{not .USE_STAGING | ternary .ACME_CERTS_DIR_PROD .ACME_CERTS_DIR_STAGING}}"
 
@@ -27,7 +27,7 @@ env:
 
 tasks:
   create-network:
-    desc: "Create the Data Cellar Docker network"
+    desc: "Create the OPENTUNITY Docker network"
     cmds:
       - >
         docker network create --driver bridge
@@ -41,14 +41,14 @@ tasks:
   start-proxy:
     deps:
       - create-network
-    desc: "Start the reverse proxy that will serve the Data Cellar services"
+    desc: "Start the reverse proxy that will serve the OPENTUNITY services"
     cmds:
       - docker compose -f {{.TASKFILE_DIR}}/reverse-proxy/docker-compose.yml up -d --wait
 
   setup-participant:
     deps:
       - create-network
-    desc: "Initialize the services and configuration code to deploy a Data Cellar data space participant"
+    desc: "Initialize the services and configuration code to deploy an OPENTUNITY data space participant"
     silent: true
     env:
       USER_WORKING_DIR: "{{.USER_WORKING_DIR}}"
