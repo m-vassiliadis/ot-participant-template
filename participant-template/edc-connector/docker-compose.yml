@@ -1,0 +1,88 @@
+services:
+  connector:
+    image: ${EDC_CONNECTOR_IMG}:${EDC_CONNECTOR_IMG_VERSION}
+    container_name: ${PARTICIPANT_NAME}.connector
+    restart: on-failure
+    environment:
+      PROPERTIES_FILE_PATH: /etc/connector/connector.properties
+      KEYSTORE_PATH: /etc/connector/certs/cert.pfx
+      KEYSTORE_PASSWORD: ${KEY_PASSW}
+      API_AUTH_KEY: ${EDC_CONNECTOR_API_KEY}
+    volumes:
+      - ./config/connector.properties:/etc/connector/connector.properties
+      - ${CERT_FOLDER}:/etc/connector/certs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      broker:
+        condition: service_healthy
+    networks:
+      - datacellar
+
+  backend:
+    image: ${EDC_CONNECTOR_IMG}:${EDC_CONNECTOR_IMG_VERSION}
+    container_name: ${PARTICIPANT_NAME}.connector-backend
+    restart: on-failure
+    volumes:
+      - ${CERT_FOLDER}:/etc/connector/certs
+    environment:
+      EDC_CERT_PATH: /etc/connector/certs/${PARTICIPANT_CERT}
+      EDC_RABBIT_URL: amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${PARTICIPANT_NAME}.connector-broker:5672
+      EDC_HTTP_API_PORT: ${EDC_BACKEND_PORT}
+    # ports:
+    #   - 28000:28000
+    command: [run-http-backend]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      broker:
+        condition: service_healthy
+    networks:
+      - datacellar
+
+  broker:
+    image: rabbitmq:3.11-management
+    container_name: ${PARTICIPANT_NAME}.connector-broker
+    restart: on-failure
+    # ports:
+    #   - 5672:5672
+    #   - 15672:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    networks:
+      - datacellar
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  postgres:
+    image: postgres:14
+    container_name: ${PARTICIPANT_NAME}.connector-postgres
+    restart: on-failure
+    # ports:
+    #   - 15432:5432
+    environment:
+      POSTGRES_DB: connector
+      POSTGRES_USER: ${EDC_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${EDC_POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./config/sql-store-schemas/:/docker-entrypoint-initdb.d/
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U postgres]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  postgres_data: {}
+
+networks:
+  datacellar:
+    external: true
+    name: datacellar_network

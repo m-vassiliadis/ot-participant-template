@@ -1,0 +1,23 @@
+services:
+  wallet:
+    image: waltid/wallet-api:${WALTID_IMG_VERSION}
+    container_name: ${PARTICIPANT_NAME}.wallet
+    restart: unless-stopped
+    volumes:
+      - ./waltid/config:/waltid-wallet-api/config
+      - ./waltid/data:/waltid-wallet-api/data
+    # ports:
+    #   - 7001:7001
+    networks:
+      - datacellar
+    healthcheck:
+      test: curl http://localhost:7001/swagger/index.html
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+networks:
+  datacellar:
+    external: true
+    name: datacellar_network

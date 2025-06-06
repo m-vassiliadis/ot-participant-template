@@ -1,0 +1,17 @@
+services:
+  webui:
+    image: docker.io/razzabi/participant-webui:v0.2.2
+    container_name: ${PARTICIPANT_NAME}.credentials-webui
+    restart: always
+    environment:
+      DOMAIN_NAME: ${DOMAIN_NAME}
+      PARTICIPANT_NAME: ${PARTICIPANT_NAME}
+      BASE_URL: https://${PARTICIPANT_NAME}.${DOMAIN_NAME}
+      API_BASE_URL: "https://${PARTICIPANT_NAME}.${DOMAIN_NAME}/api/v1/"
+    networks:
+      - datacellar
+
+networks:
+  datacellar:
+    external: true
+    name: datacellar_network

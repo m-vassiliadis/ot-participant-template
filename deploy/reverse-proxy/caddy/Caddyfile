@@ -1,0 +1,17 @@
+{
+	key_type rsa2048
+	acme_ca {$CADDY_ACME_CA}
+	auto_https disable_redirects
+
+	cert_issuer acme {
+		preferred_chains {
+			root_common_name "ISRG Root X1"
+		}
+	}
+
+	log {
+		level debug
+	}
+}
+
+import conf.d/*.caddy

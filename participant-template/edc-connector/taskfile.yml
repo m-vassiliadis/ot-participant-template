@@ -1,0 +1,114 @@
+version: "3"
+
+vars:
+  EXAMPLES_IMAGE: datacellar-connector-examples
+  LOCAL_PROTOCOL_URL: "https://{{.PARTICIPANT_NAME}}.{{.DOMAIN_NAME}}/protocol"
+  EDC_CONNECTOR_SCHEME: "http"
+  EDC_CONNECTOR_HOST: "{{.PARTICIPANT_NAME}}.{{.DOMAIN_NAME}}"
+  EDC_CONNECTOR_CONNECTOR_ID: "{{.PARTICIPANT_NAME}}"
+  EDC_CONNECTOR_PARTICIPANT_ID: "{{.PARTICIPANT_NAME}}"
+  EDC_CONNECTOR_MANAGEMENT_PORT: 80
+  EDC_CONNECTOR_CONTROL_PORT: 80
+  EDC_CONNECTOR_PUBLIC_PORT: 80
+  EDC_CONNECTOR_PROTOCOL_PORT: 80
+  TASKFILE_DIR: "{{.EDC_CONNECTOR_FOLDER}}"
+
+tasks:
+  config:
+    desc: "Replace the environment variables in the connector properties file template"
+    cmds:
+      - >
+        envsubst
+        < {{.TASKFILE_DIR}}/config/connector.properties.tmpl
+        > {{.TASKFILE_DIR}}/config/connector.properties
+      # Remove lines where property value is empty
+      - sed -i '/=$/d' {{.TASKFILE_DIR}}/config/connector.properties
+
+  start:
+    desc: "Start the connector stack"
+    deps:
+      - config
+    cmds:
+      - docker compose -p {{.PARTICIPANT_NAME}} -f {{.TASKFILE_DIR}}/docker-compose.yml up -d --wait
+
+  stop:
+    desc: "Stop the connector stack"
+    cmds:
+      - docker compose -p {{.PARTICIPANT_NAME}} -f {{.TASKFILE_DIR}}/docker-compose.yml down
+
+  restart:
+    desc: "Restart the connector stack"
+    deps:
+      - config
+    cmds:
+      - docker compose -p {{.PARTICIPANT_NAME}} -f {{.TASKFILE_DIR}}/docker-compose.yml restart connector
+
+  build-example-image:
+    desc: "Build the container image to run the connector examples"
+    dir: "{{.TASKFILE_DIR}}/examples"
+    cmds:
+      - >
+        docker build
+        --build-arg EDC_CONNECTOR_SCHEME={{.EDC_CONNECTOR_SCHEME}}
+        --build-arg EDC_CONNECTOR_HOST={{.EDC_CONNECTOR_HOST}}
+        --build-arg EDC_CONNECTOR_CONNECTOR_ID={{.EDC_CONNECTOR_CONNECTOR_ID}}
+        --build-arg EDC_CONNECTOR_PARTICIPANT_ID={{.EDC_CONNECTOR_PARTICIPANT_ID}}
+        --build-arg EDC_CONNECTOR_MANAGEMENT_PORT={{.EDC_CONNECTOR_MANAGEMENT_PORT}}
+        --build-arg EDC_CONNECTOR_CONTROL_PORT={{.EDC_CONNECTOR_CONTROL_PORT}}
+        --build-arg EDC_CONNECTOR_PUBLIC_PORT={{.EDC_CONNECTOR_PUBLIC_PORT}}
+        --build-arg EDC_CONNECTOR_PROTOCOL_PORT={{.EDC_CONNECTOR_PROTOCOL_PORT}}
+        --build-arg EDC_CONNECTOR_API_KEY={{.EDC_CONNECTOR_API_KEY}}
+        --build-arg EDC_CONNECTOR_API_KEY_HEADER={{.EDC_CONNECTOR_API_KEY_HEADER}}
+        -t {{.EXAMPLES_IMAGE}} .
+
+  test-catalogue:
+    desc: "Run an example that connects to the local connector to fetch its catalogue"
+    deps:
+      - build-example-image
+    cmds:
+      - >
+        docker run
+        --rm --network host
+        -e COUNTER_PARTY_PROTOCOL_URL={{.LOCAL_PROTOCOL_URL}}
+        {{.EXAMPLES_IMAGE}}
+        python3 /opt/examples/catalogue.py
+
+  test-catalogue-remote:
+    desc: "Run an example that connects to a remote connector to fetch its catalogue"
+    deps:
+      - build-example-image
+    requires:
+      vars:
+        - REMOTE_PROTOCOL_URL
+    cmds:
+      - >
+        docker run
+        --rm --network host
+        -e COUNTER_PARTY_PROTOCOL_URL={{.REMOTE_PROTOCOL_URL}}
+        {{.EXAMPLES_IMAGE}}
+        python3 /opt/examples/catalogue.py
+
+  test-get-dataset:
+    desc: "Run an example that downloads a dataset from a remote connector via contract negotiation (requires HTTP GET endpoint without arguments)"
+    deps:
+      - build-example-image
+    vars:
+      # We need to run inside the connector's Docker network to connect to the broker
+      # We should fix this eventually so consumer applications can run on the host
+      NETWORK_NAME: datacellar_network
+      EDC_RABBIT_URL: amqp://{{.RABBITMQ_DEFAULT_USER}}:{{.RABBITMQ_DEFAULT_PASS}}@{{.PARTICIPANT_NAME}}.connector-broker:5672
+    requires:
+      vars:
+        - REMOTE_PROTOCOL_URL
+        - COUNTER_PARTY_CONNECTOR_ID
+        - ASSET_QUERY
+    cmds:
+      - >
+        docker run
+        --rm --network {{.NETWORK_NAME}}
+        -e COUNTER_PARTY_PROTOCOL_URL={{.REMOTE_PROTOCOL_URL}}
+        -e COUNTER_PARTY_CONNECTOR_ID={{.COUNTER_PARTY_CONNECTOR_ID}}
+        -e ASSET_QUERY={{.ASSET_QUERY}}
+        -e EDC_RABBIT_URL={{.EDC_RABBIT_URL}}
+        {{.EXAMPLES_IMAGE}}
+        python3 /opt/examples/get-dataset.py
