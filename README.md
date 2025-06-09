@@ -70,7 +70,7 @@ sequenceDiagram
 
 The **web page of the onboarding portal** is available at:
 
-https://idp.OPENTUNITY.cosypoc.ovh
+https://idm.opentunity.que-tech.com
 
 However, please note that the onboarding portal is a work in progress. If you encounter any issues, or if the portal is unavailable, please contact the OPENTUNITY team.
 
