@@ -12,7 +12,6 @@
       - [Run an Example to Test the Connector](#run-an-example-to-test-the-connector)
   - [Other Tasks and Notes](#other-tasks-and-notes)
     - [Access to the Credentials Manager API](#access-to-the-credentials-manager-api)
-    - [Register a Legal Participant in the Global Catalogue](#register-a-legal-participant-in-the-global-catalogue)
   - [Next Steps](#next-steps)
     - [Testing Against the Public Test Connector](#testing-against-the-public-test-connector)
   - [License](#license)
