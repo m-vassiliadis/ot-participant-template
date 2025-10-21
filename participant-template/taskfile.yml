@@ -137,7 +137,7 @@ tasks:
       - |
         status=$(curl -s -o /dev/null -w "%{http_code}" \
           -X GET \
-          "{{.ISSUER_API_BASE_URL}}/api/v2/participants" \
+          "{{.ISSUER_API_BASE_URL}}/api/v2/users/me/api-key" \
           -H 'accept: application/json' \
           -H 'X-API-KEY: {{.ISSUER_API_KEY}}')
 
