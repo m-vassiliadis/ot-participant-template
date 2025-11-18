@@ -40,7 +40,7 @@ tasks:
     cmds:
       - echo "Provisioning participant {{.PARTICIPANT_NAME}} wallet"
       - >
-        docker exec -it {{.PARTICIPANT_NAME}}.credentials-api opentunity provision-wallet
+        docker exec -it {{.PARTICIPANT_NAME}}.credentials-api datacellar provision-wallet
 
   create-legalparticipant:
     silent: true
