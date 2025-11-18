@@ -76,7 +76,7 @@ declare -A DEFAULTS=(
     ["PARTICIPANT_ROOT_FOLDER"]="$USER_WORKING_DIR/participants"
     ["PROXY_FOLDER"]="$USER_WORKING_DIR/reverse-proxy/caddy"
     ["USE_LETSENCRYPT"]="true"
-    ["DATACELLAR_IDP_URL"]="https://idm.opentunity.que-tech.com"
+    ["OPENTUNITY_IDP_URL"]="https://idm.opentunity.que-tech.com"
     ["ISSUER_DID"]="did:web:idm.opentunity.que-tech.com:wallet-api:registry:56281e77-8939-480e-b283-d62a7005fa8c"
 )
 
@@ -86,11 +86,11 @@ prompt_user "Enter domain name" "" domain_name
 prompt_user "Enter participant root folder" "${DEFAULTS[PARTICIPANT_ROOT_FOLDER]}" participant_root_folder
 prompt_user "Enter proxy folder" "${DEFAULTS[PROXY_FOLDER]}" proxy_folder
 prompt_user "Use Let's Encrypt? (true/false)" "${DEFAULTS[USE_LETSENCRYPT]}" use_letsencrypt
-prompt_user "Set URL of OPENTUNITY's Identity Provider" "${DEFAULTS[DATACELLAR_IDP_URL]}" datacellar_idp_url
-prompt_user "Set URL of the Issuer API" "$datacellar_idp_url" issuer_api_url
+prompt_user "Set URL of OPENTUNITY's Identity Provider" "${DEFAULTS[OPENTUNITY_IDP_URL]}" opentunity_idp_url
+prompt_user "Set URL of the Issuer API" "$opentunity_idp_url" issuer_api_url
 prompt_user "Set DID of the trust anchor (i.e., the central trusted issuer)" "${DEFAULTS[ISSUER_DID]}" issuer_did
 prompt_user "Set API key to access the Issuer API" "${DEFAULTS[ISSUER_API_KEY]}" issuer_api_key
-prompt_user "Set URL of the Verifier API" "$datacellar_idp_url" verifier_api_url
+prompt_user "Set URL of the Verifier API" "$opentunity_idp_url" verifier_api_url
 OPENAPI_URL_PROMPT="Enter the URL of the OpenAPI file that defines your connector's API, \
 or leave it blank if your connector functions strictly as a consumer \
 (e.g., https://petstore3.swagger.io/api/v3/openapi.json)"
@@ -103,7 +103,7 @@ declare -A ENV_VARS=(
     ["DOMAIN_NAME"]="$domain_name"
     ["PROXY_FOLDER"]="$proxy_folder"
     ["USE_LETSENCRYPT"]="$use_letsencrypt"
-    ["DATACELLAR_IDP_URL"]="$datacellar_idp_url"
+    ["OPENTUNTIY_IDP_URL"]="$opentunity_idp_url"
     ["ISSUER_API_BASE_URL"]="$issuer_api_url"
     ["ISSUER_DID"]="$issuer_did"
     ["ISSUER_API_KEY"]="$issuer_api_key"
