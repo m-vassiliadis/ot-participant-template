@@ -77,7 +77,7 @@ declare -A DEFAULTS=(
     ["PROXY_FOLDER"]="$USER_WORKING_DIR/reverse-proxy/caddy"
     ["USE_LETSENCRYPT"]="true"
     ["OPENTUNITY_IDP_URL"]="https://idm.opentunity.que-tech.com"
-    ["ISSUER_DID"]="did:web:idm.opentunity.que-tech.com:wallet-api:registry:56281e77-8939-480e-b283-d62a7005fa8c"
+    ["ISSUER_DID"]="did:web:idm.opentunity.que-tech.com:wallet-api:registry:6525bd9c-7010-49be-a9ff-358fb1649c5f"
 )
 
 # Collect user inputs
