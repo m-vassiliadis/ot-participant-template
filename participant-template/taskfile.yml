@@ -131,7 +131,7 @@ tasks:
         "$PARTICIPANT_TEMPLATE/" "$PARTICIPANT_FOLDER/"
   
   check-api-key:
-    desc: "Check participant environment {{.DATACELLAR_IDP_URL}}"
+    desc: "Check participant environment {{.OPENTUNITY_IDP_URL}}"
     silent: true
     cmds:
       - |
