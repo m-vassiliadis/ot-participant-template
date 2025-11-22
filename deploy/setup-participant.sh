@@ -70,19 +70,43 @@ USER_WORKING_DIR="${USER_WORKING_DIR:-.}"
 echo "Working directory is: $USER_WORKING_DIR"
 
 
-# Default configuration values
+# Default configuration values (fallback if setup-defaults.env is not found)
 declare -A DEFAULTS=(
     ["PARTICIPANT_NAME"]="consumer"
+    ["DOMAIN_NAME"]=""
     ["PARTICIPANT_ROOT_FOLDER"]="$USER_WORKING_DIR/participants"
     ["PROXY_FOLDER"]="$USER_WORKING_DIR/reverse-proxy/caddy"
     ["USE_LETSENCRYPT"]="true"
     ["OPENTUNITY_IDP_URL"]="https://idm.opentunity.que-tech.com"
     ["ISSUER_DID"]="did:web:idm.opentunity.que-tech.com:wallet-api:registry:6525bd9c-7010-49be-a9ff-358fb1649c5f"
+    ["ISSUER_API_KEY"]=""
+    ["CONNECTOR_OPENAPI_URL"]=""
 )
+
+# Load defaults from file if it exists
+DEFAULTS_FILE="$USER_WORKING_DIR/setup-defaults.env"
+if [ -f "$DEFAULTS_FILE" ]; then
+    print_blue "📄 Loading defaults from: $DEFAULTS_FILE"
+    printf "\n"
+    while IFS='=' read -r key value || [ -n "$key" ]; do
+        # Skip empty lines and comments
+        [[ -z "$key" || "$key" =~ ^[[:space:]]*# ]] && continue
+
+        # Trim whitespace
+        key=$(echo "$key" | xargs)
+        value=$(echo "$value" | xargs)
+
+        # Expand $USER_WORKING_DIR in value if present
+        value="${value//\$USER_WORKING_DIR/$USER_WORKING_DIR}"
+
+        # Update DEFAULTS array
+        DEFAULTS["$key"]="$value"
+    done < "$DEFAULTS_FILE"
+fi
 
 # Collect user inputs
 prompt_user "Enter participant name" "${DEFAULTS[PARTICIPANT_NAME]}" participant_name
-prompt_user "Enter domain name" "" domain_name
+prompt_user "Enter domain name" "${DEFAULTS[DOMAIN_NAME]}" domain_name
 prompt_user "Enter participant root folder" "${DEFAULTS[PARTICIPANT_ROOT_FOLDER]}" participant_root_folder
 prompt_user "Enter proxy folder" "${DEFAULTS[PROXY_FOLDER]}" proxy_folder
 prompt_user "Use Let's Encrypt? (true/false)" "${DEFAULTS[USE_LETSENCRYPT]}" use_letsencrypt
@@ -94,7 +118,7 @@ prompt_user "Set URL of the Verifier API" "$opentunity_idp_url" verifier_api_url
 OPENAPI_URL_PROMPT="Enter the URL of the OpenAPI file that defines your connector's API, \
 or leave it blank if your connector functions strictly as a consumer \
 (e.g., https://petstore3.swagger.io/api/v3/openapi.json)"
-prompt_user "$OPENAPI_URL_PROMPT" "" connector_openapi_url "true"
+prompt_user "$OPENAPI_URL_PROMPT" "${DEFAULTS[CONNECTOR_OPENAPI_URL]}" connector_openapi_url "true"
 
 # Export environment variables
 declare -A ENV_VARS=(
