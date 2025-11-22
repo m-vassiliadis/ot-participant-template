@@ -104,21 +104,44 @@ if [ -f "$DEFAULTS_FILE" ]; then
     done < "$DEFAULTS_FILE"
 fi
 
-# Collect user inputs
-prompt_user "Enter participant name" "${DEFAULTS[PARTICIPANT_NAME]}" participant_name
-prompt_user "Enter domain name" "${DEFAULTS[DOMAIN_NAME]}" domain_name
-prompt_user "Enter participant root folder" "${DEFAULTS[PARTICIPANT_ROOT_FOLDER]}" participant_root_folder
-prompt_user "Enter proxy folder" "${DEFAULTS[PROXY_FOLDER]}" proxy_folder
-prompt_user "Use Let's Encrypt? (true/false)" "${DEFAULTS[USE_LETSENCRYPT]}" use_letsencrypt
-prompt_user "Set URL of OPENTUNITY's Identity Provider" "${DEFAULTS[OPENTUNITY_IDP_URL]}" opentunity_idp_url
-prompt_user "Set URL of the Issuer API" "$opentunity_idp_url" issuer_api_url
-prompt_user "Set DID of the trust anchor (i.e., the central trusted issuer)" "${DEFAULTS[ISSUER_DID]}" issuer_did
-prompt_user "Set API key to access the Issuer API" "${DEFAULTS[ISSUER_API_KEY]}" issuer_api_key
-prompt_user "Set URL of the Verifier API" "$opentunity_idp_url" verifier_api_url
-OPENAPI_URL_PROMPT="Enter the URL of the OpenAPI file that defines your connector's API, \
+# Check if running in non-interactive mode
+if [ "$SKIP_PROMPTS" = "true" ]; then
+    # Non-interactive mode - use pre-set environment variables
+    participant_name="$PARTICIPANT_NAME"
+    domain_name="$DOMAIN_NAME"
+    participant_root_folder="${PARTICIPANT_ROOT_FOLDER:-${DEFAULTS[PARTICIPANT_ROOT_FOLDER]}}"
+    proxy_folder="${PROXY_FOLDER:-${DEFAULTS[PROXY_FOLDER]}}"
+    use_letsencrypt="${USE_LETSENCRYPT:-${DEFAULTS[USE_LETSENCRYPT]}}"
+    opentunity_idp_url="${OPENTUNITY_IDP_URL:-${DEFAULTS[OPENTUNITY_IDP_URL]}}"
+    issuer_api_url="${ISSUER_API_BASE_URL:-$opentunity_idp_url}"
+    issuer_did="${ISSUER_DID:-${DEFAULTS[ISSUER_DID]}}"
+    issuer_api_key="$ISSUER_API_KEY"
+    verifier_api_url="${VERIFIER_API_BASE_URL:-$opentunity_idp_url}"
+    connector_openapi_url="${CONNECTOR_OPENAPI_URL:-}"
+
+    # Validate required fields in non-interactive mode
+    if [ -z "$participant_name" ] || [ -z "$domain_name" ] || [ -z "$issuer_api_key" ]; then
+        print_red "❌ Error: Required environment variables missing in non-interactive mode"
+        print_red "   Required: PARTICIPANT_NAME, DOMAIN_NAME, ISSUER_API_KEY"
+        exit 1
+    fi
+else
+    # Interactive mode - collect user inputs
+    prompt_user "Enter participant name" "${DEFAULTS[PARTICIPANT_NAME]}" participant_name
+    prompt_user "Enter domain name" "${DEFAULTS[DOMAIN_NAME]}" domain_name
+    prompt_user "Enter participant root folder" "${DEFAULTS[PARTICIPANT_ROOT_FOLDER]}" participant_root_folder
+    prompt_user "Enter proxy folder" "${DEFAULTS[PROXY_FOLDER]}" proxy_folder
+    prompt_user "Use Let's Encrypt? (true/false)" "${DEFAULTS[USE_LETSENCRYPT]}" use_letsencrypt
+    prompt_user "Set URL of OPENTUNITY's Identity Provider" "${DEFAULTS[OPENTUNITY_IDP_URL]}" opentunity_idp_url
+    prompt_user "Set URL of the Issuer API" "$opentunity_idp_url" issuer_api_url
+    prompt_user "Set DID of the trust anchor (i.e., the central trusted issuer)" "${DEFAULTS[ISSUER_DID]}" issuer_did
+    prompt_user "Set API key to access the Issuer API" "${DEFAULTS[ISSUER_API_KEY]}" issuer_api_key
+    prompt_user "Set URL of the Verifier API" "$opentunity_idp_url" verifier_api_url
+    OPENAPI_URL_PROMPT="Enter the URL of the OpenAPI file that defines your connector's API, \
 or leave it blank if your connector functions strictly as a consumer \
 (e.g., https://petstore3.swagger.io/api/v3/openapi.json)"
-prompt_user "$OPENAPI_URL_PROMPT" "${DEFAULTS[CONNECTOR_OPENAPI_URL]}" connector_openapi_url "true"
+    prompt_user "$OPENAPI_URL_PROMPT" "${DEFAULTS[CONNECTOR_OPENAPI_URL]}" connector_openapi_url "true"
+fi
 
 # Export environment variables
 declare -A ENV_VARS=(
@@ -178,7 +201,11 @@ printf "\n"
 # Setup participant
 if [ -d "$PARTICIPANT_FOLDER" ]; then
     print_blue "📦 Cleaning up existing participant..."
-    (cd "$PARTICIPANT_FOLDER" && task stop-all) || print_red "⚠️  Failed to stop participant"
+    # Only stop services if not in package generation mode
+    if [ "$SKIP_PROMPTS" != "true" ]; then
+        (cd "$PARTICIPANT_FOLDER" && task stop-all) || print_red "⚠️  Failed to stop participant"
+    fi
+    printf "\n"
     sudo rm -R "$PARTICIPANT_FOLDER" || print_red "⚠️  Failed to remove participant folder"
 fi
 
@@ -186,10 +213,21 @@ mkdir -p "$PARTICIPANT_FOLDER"
 cp -R "$PARTICIPANT_TEMPLATE"/* "$PARTICIPANT_FOLDER/"
 envsubst <"$PARTICIPANT_TEMPLATE/.env.tmpl" >"$PARTICIPANT_FOLDER/.env"
 
-print_bold_green "⚙️ Configuring participant services..."
-printf "\n"
-(cd "$PARTICIPANT_FOLDER" && task config-all)
-cp "$PARTICIPANT_FOLDER/reverse-proxy/caddy/conf.d/$PARTICIPANT_NAME.caddy" "$EXTERNAL_PROXY_FOLDER/conf.d/$PARTICIPANT_NAME.caddy"
-docker compose -f "$EXTERNAL_PROXY_FOLDER/../docker-compose.yml" restart caddy
+# Only perform configuration and deployment steps if not in package generation mode
+if [ "$SKIP_PROMPTS" != "true" ]; then
+    print_bold_green "⚙️ Configuring participant services..."
+    printf "\n"
+    (cd "$PARTICIPANT_FOLDER" && task config-all)
+    cp "$PARTICIPANT_FOLDER/reverse-proxy/caddy/conf.d/$PARTICIPANT_NAME.caddy" "$EXTERNAL_PROXY_FOLDER/conf.d/$PARTICIPANT_NAME.caddy"
+    docker compose -f "$EXTERNAL_PROXY_FOLDER/../docker-compose.yml" restart caddy
+fi
 
-print_bold_green "✨ Setup complete!"
+print_bold_green "✨ Configuration complete!"
+printf "\n"
+
+if [ "$SKIP_PROMPTS" != "true" ]; then
+    print_blue "📋 Next steps:"
+    print_blue "   1. Navigate to the participant folder: cd '$PARTICIPANT_FOLDER'"
+    print_blue "   2. Start all services: task start-all"
+    print_blue "   3. The start-all task will handle Docker network and proxy setup"
+fi
